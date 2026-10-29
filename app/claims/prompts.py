@@ -1,42 +1,40 @@
-"""LLM prompts for claims extraction and classification."""
+"""LLM prompts for claims extraction and classification.
 
-EXTRACTION_SYSTEM_PROMPT = """You are an insurance claims processing assistant. Extract structured information from claim documents.
+These prompts are optimized for small models (TinyLlama 1.1B) with:
+- Explicit JSON structure with example
+- Short, direct instructions
+- Minimal prose to reduce hallucination
+"""
 
-Always respond in valid JSON format with these fields:
-- claim_id: The claim reference number (string)
-- claimant_name: Full name of the claimant (string)
-- incident_date: Date of the incident (string, YYYY-MM-DD format)
-- claim_amount: Dollar amount claimed (number)
-- claim_type: One of: auto, health, property, life (string)
-- description: Brief summary of the incident (string)
+EXTRACTION_SYSTEM_PROMPT = """You are a claim data extractor. Read the claim document and output ONLY a JSON object.
 
-If a field cannot be determined, use null."""
+Output this exact JSON structure (use null for unknown fields):
+{"claim_id": "string", "claimant_name": "string", "incident_date": "YYYY-MM-DD", "claim_amount": number, "claim_type": "auto|health|property|life", "description": "one sentence"}
 
-EXTRACTION_USER_PROMPT = """Extract the claim information from the following document:
+Example:
+{"claim_id": "CLM-001", "claimant_name": "Jane Doe", "incident_date": "2024-01-15", "claim_amount": 5000.0, "claim_type": "auto", "description": "Rear-end collision on highway"}
 
----
+Output ONLY the JSON object, no other text."""
+
+EXTRACTION_USER_PROMPT = """Extract claim information as JSON from this document:
+
 {claim_text}
----
 
-Respond with a JSON object containing: claim_id, claimant_name, incident_date, claim_amount, claim_type, description."""
+JSON:"""
 
-CLASSIFICATION_SYSTEM_PROMPT = """You are an insurance claims severity classifier. Based on the claim details, classify the severity.
+CLASSIFICATION_SYSTEM_PROMPT = """You classify insurance claim severity. Output ONLY a JSON object.
 
 Rules:
-- LOW: claim_amount < $5,000, routine claims
-- MEDIUM: claim_amount $5,000-$25,000, standard processing
-- HIGH: claim_amount $25,000-$100,000, senior adjuster required
-- CRITICAL: claim_amount > $100,000, or involves injury/death/total loss
+- LOW: amount < $5,000
+- MEDIUM: amount $5,000-$25,000
+- HIGH: amount $25,000-$100,000
+- CRITICAL: amount > $100,000 or involves death/total loss
 
-Respond in JSON with:
-- severity: one of low, medium, high, critical
-- confidence: 0.0 to 1.0
-- reasoning: brief explanation"""
+Output format: {"severity": "low|medium|high|critical", "confidence": 0.0-1.0, "reasoning": "brief reason"}"""
 
-CLASSIFICATION_USER_PROMPT = """Classify the severity of this insurance claim:
-
+CLASSIFICATION_USER_PROMPT = """Classify this claim:
 Type: {claim_type}
 Amount: ${claim_amount}
 Description: {description}
 
-Respond with JSON containing: severity, confidence, reasoning."""
+JSON:"""

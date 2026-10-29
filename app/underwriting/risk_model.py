@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import List
+from typing import List, Optional, Tuple
 
 from ..common.llm_client import generate
 from ..common.models import ApplicantProfile, RiskAssessment, ClaimType
@@ -61,7 +61,7 @@ async def assess_risk(applicant: ApplicantProfile) -> RiskAssessment:
     )
 
 
-def _calculate_risk_score(applicant: ApplicantProfile) -> tuple[float, List[str]]:
+def _calculate_risk_score(applicant: ApplicantProfile) -> Tuple[float, List[str]]:
     """Calculate a composite risk score from applicant factors."""
     score = 25.0  # Base score
     factors = []
@@ -97,13 +97,13 @@ def _calculate_risk_score(applicant: ApplicantProfile) -> tuple[float, List[str]
             score += 8
             factors.append("Minor driving violations")
 
-    # Coverage amount relative risk
-    if applicant.coverage_amount > 500_000:
-        score += 10
-        factors.append(f"High coverage amount: ${applicant.coverage_amount:,.0f}")
-    elif applicant.coverage_amount > 1_000_000:
+    # Coverage amount relative risk (check larger threshold first)
+    if applicant.coverage_amount > 1_000_000:
         score += 15
         factors.append(f"Very high coverage amount: ${applicant.coverage_amount:,.0f}")
+    elif applicant.coverage_amount > 500_000:
+        score += 10
+        factors.append(f"High coverage amount: ${applicant.coverage_amount:,.0f}")
 
     return min(score, 100.0), factors
 
@@ -120,7 +120,7 @@ def _score_to_category(score: float) -> str:
         return "very_high"
 
 
-def _parse_json(text: str) -> dict | None:
+def _parse_json(text: str) -> Optional[dict]:
     try:
         if "```json" in text:
             text = text.split("```json")[1].split("```")[0]

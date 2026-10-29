@@ -107,14 +107,21 @@ async def _fallback_external(
         "temperature": temperature,
     }
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        response = await client.post(url, json=payload, headers=headers)
-        response.raise_for_status()
-        data = response.json()
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(url, json=payload, headers=headers)
+            response.raise_for_status()
+            data = response.json()
 
-        if "choices" in data:
-            return data["choices"][0]["message"]["content"]
-        return str(data)
+            if "choices" in data:
+                return data["choices"][0]["message"]["content"]
+            return str(data)
+    except httpx.HTTPError as e:
+        logger.error(f"Fallback external MaaS also failed: {e}")
+        raise RuntimeError(
+            f"All LLM endpoints unreachable. Primary: {settings.goldenray_api_url}, "
+            f"Fallback: {settings.goldenray_external_url}. Error: {e}"
+        ) from e
 
 
 async def generate(

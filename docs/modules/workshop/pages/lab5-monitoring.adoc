@@ -2,12 +2,18 @@
 :description: Track model performance and pipeline execution with MLflow
 :page-pagination:
 
-== Objectives
+[sidebar]
+****
+*What you'll learn:* How to use MLflow to track claims processing experiments, compare model performance across runs, and set up production monitoring alerts.
 
-* View MLflow experiments and runs
-* Track claims processing metrics
-* Monitor model quality over time
-* Review Flyte pipeline execution
+*Time estimate:* 15–20 minutes
+
+*Prerequisites:*
+
+* Insurance AI app running locally (Lab 1 complete)
+* Labs 2–4 completed (to have tracking data)
+* Access to MLflow UI at `http://10.0.0.113:30500`
+****
 
 == Overview
 
@@ -33,7 +39,7 @@ Process several claims to generate MLflow tracking data:
 # Process all sample claims
 for i in 1 2 3 4 5; do
   echo "Processing claim${i}..."
-  curl -s -X POST http://localhost:8000/api/claims/process \
+  curl -s -X POST http://localhost:8001/api/claims/process \
     -H "Content-Type: application/json" \
     -d "{\"text\": $(cat data/sample_claims/claim${i}.txt | jq -Rs .)}" | jq '{severity: .classification.severity, team: .routing.adjuster_team}'
   echo
@@ -166,6 +172,22 @@ INFO: PII redacted - ssn-redaction - 1 occurrence(s) redacted in output
 * [ ] Understand which metrics indicate model quality
 * [ ] Know how to compare runs across models
 * [ ] Aware of guardrails PII audit logging
+
+== Troubleshooting
+
+[cols="2,3"]
+|===
+|Symptom |Fix
+
+|MLflow UI not accessible at `:30500`
+|Check network/VPN connectivity to `10.0.0.113`. The port may be blocked or the MLflow pod may not be running.
+
+|No experiments visible in MLflow
+|Experiments are created by the Flyte pipeline, not the REST API directly. Run `pipelines/claims_pipeline.py` if you need MLflow data.
+
+|"Connection refused" errors in app logs mentioning MLflow
+|MLflow is optional. The app continues working without it. Set `MLFLOW_TRACKING_URI` to a reachable URI or ignore the warnings.
+|===
 
 == Summary
 

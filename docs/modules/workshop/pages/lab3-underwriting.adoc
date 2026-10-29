@@ -2,11 +2,17 @@
 :description: AI-assisted risk assessment and premium calculation
 :page-pagination:
 
-== Objectives
+[sidebar]
+****
+*What you'll learn:* How the underwriting module scores applicant risk using business rules, enriches assessments with LLM narratives, and calculates risk-adjusted premiums.
 
-* Assess applicant risk using rule-based scoring + LLM narrative
-* Calculate insurance premiums based on risk profiles
-* Compare risk assessments across different applicant profiles
+*Time estimate:* 15–20 minutes
+
+*Prerequisites:*
+
+* Insurance AI app running locally (Lab 1 complete)
+* `curl` and `jq` installed
+****
 
 == Overview
 
@@ -21,7 +27,7 @@ Applicant Profile → Risk Scoring (Rules) → LLM Narrative → Premium Calcula
 
 [source,bash]
 ----
-curl -s -X POST http://localhost:8000/api/underwriting/assess \
+curl -s -X POST http://localhost:8001/api/underwriting/assess \
   -H "Content-Type: application/json" \
   -d '{
     "applicant": {
@@ -52,7 +58,7 @@ Expected output:
 
 [source,bash]
 ----
-curl -s -X POST http://localhost:8000/api/underwriting/assess \
+curl -s -X POST http://localhost:8001/api/underwriting/assess \
   -H "Content-Type: application/json" \
   -d '{
     "applicant": {
@@ -87,7 +93,7 @@ Expected output:
 [source,bash]
 ----
 # Low-risk applicant premium
-curl -s -X POST http://localhost:8000/api/underwriting/premium \
+curl -s -X POST http://localhost:8001/api/underwriting/premium \
   -H "Content-Type: application/json" \
   -d '{
     "applicant": {
@@ -121,7 +127,7 @@ Expected output:
 [source,bash]
 ----
 # High-risk applicant premium
-curl -s -X POST http://localhost:8000/api/underwriting/premium \
+curl -s -X POST http://localhost:8001/api/underwriting/premium \
   -H "Content-Type: application/json" \
   -d '{
     "applicant": {
@@ -144,7 +150,7 @@ Notice how the high-risk applicant pays significantly more due to:
 [source,bash]
 ----
 # Applicant with health conditions
-curl -s -X POST http://localhost:8000/api/underwriting/premium \
+curl -s -X POST http://localhost:8001/api/underwriting/premium \
   -H "Content-Type: application/json" \
   -d '{
     "applicant": {
@@ -170,7 +176,7 @@ for i in 1 2 3; do
   PROFILE=$(cat data/applicant_profiles/profile${i}.json)
   NAME=$(echo $PROFILE | jq -r .name)
   echo "=== $NAME ==="
-  curl -s -X POST http://localhost:8000/api/underwriting/assess \
+  curl -s -X POST http://localhost:8001/api/underwriting/assess \
     -H "Content-Type: application/json" \
     -d "{\"applicant\": $PROFILE}" | jq '{risk_score, risk_category, risk_factors}'
   echo
@@ -190,8 +196,8 @@ done
 |DUI on record |+30 |Driving under influence
 |Major violations |+20 |Serious driving offenses
 |Minor violations |+8 |Speeding tickets, etc.
-|High coverage (>$500k) |+10 |Large policy exposure
-|Very high coverage (>$1M) |+15 |Very large policy exposure
+|Coverage >$1M |+15 |Very large policy exposure
+|Coverage >$500k |+10 |Large policy exposure
 |Base score |25 |Starting point for all applicants
 |===
 
@@ -203,6 +209,22 @@ done
 * [ ] Premium increases proportionally with risk score
 * [ ] Age and driving record factors affect auto insurance premiums
 * [ ] Health conditions affect health insurance premiums
+
+== Troubleshooting
+
+[cols="2,3"]
+|===
+|Symptom |Fix
+
+|422 Validation Error on `/api/underwriting/assess`
+|Ensure `coverage_type` is one of: `auto`, `health`, `property`, `life`. Check that `coverage_amount` is a number, not a string.
+
+|Risk narrative is always the rule-based fallback
+|The LLM endpoint may be unreachable. The rule-based score and factors are still correct — the LLM narrative is optional enrichment.
+
+|Premium seems too high or too low
+|Review the risk scoring rules table above. The premium formula is: `base_rate × coverage_amount × risk_multiplier × age_factor × tier_factor`.
+|===
 
 == Next
 

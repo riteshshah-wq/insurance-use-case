@@ -2,19 +2,19 @@
 :description: Set up the GoldenRay AI Platform and deploy the Insurance AI application
 :page-pagination:
 
-== Objectives
+[sidebar]
+****
+*What you'll learn:* How to verify GoldenRay platform access, test model endpoints, clone and run the Insurance AI app locally, and optionally deploy to Kubernetes.
 
-* Access the GoldenRay AI Platform
-* Verify model endpoints are available
-* Deploy the Insurance AI application
-* Test connectivity
+*Time estimate:* 15–20 minutes
 
-== Prerequisites
+*Prerequisites:*
 
 * Access to the GoldenRay cluster (IP: `10.0.0.113`)
 * `kubectl` configured with cluster access
 * Python 3.12+ installed locally
 * `curl` or HTTPie for API testing
+****
 
 == Step 1: Verify Platform Access
 
@@ -94,17 +94,17 @@ export GOLDENRAY_NAMESPACE=demo-tenant
 export GOLDENRAY_ENDPOINT=TinyLlama
 
 # Start the application
-uvicorn app.api:app --reload --port 8000
+uvicorn app.api:app --reload --port 8001
 ----
 
-Expected: Server starts on `http://localhost:8000`.
+Expected: Server starts on `http://localhost:8001`.
 
 == Step 4: Verify the Application
 
 [source,bash]
 ----
 # Health check
-curl -s http://localhost:8000/health | jq .
+curl -s http://localhost:8001/health | jq .
 ----
 
 Expected output:
@@ -118,7 +118,7 @@ Expected output:
 }
 ----
 
-Visit http://localhost:8000/docs to see the interactive Swagger UI.
+Visit http://localhost:8001/docs to see the interactive Swagger UI.
 
 == Step 5: Deploy to Kubernetes (Optional)
 
@@ -150,6 +150,28 @@ At the end of this lab, you should have:
 * [ ] Insurance AI app running locally or on Kubernetes
 * [ ] Health endpoint returning expected response
 * [ ] Swagger UI accessible at `/docs`
+
+== Troubleshooting
+
+[cols="2,3"]
+|===
+|Symptom |Fix
+
+|`curl: (7) Failed to connect` to MaaS API
+|Verify VPN or network access to `10.0.0.113`. Check that port 30888 is not blocked by a firewall.
+
+|`pip install` fails with resolver errors
+|Try `pip install --upgrade pip` first, then re-run. Ensure Python 3.12+.
+
+|`ModuleNotFoundError: pydantic_settings`
+|Run `pip install pydantic-settings`. Ensure you activated the virtual environment.
+
+|Uvicorn starts but `curl` to `/health` hangs
+|Check that no other process is using the same port: `lsof -i :8001`.
+
+|Swagger UI loads but API calls return 500
+|The GoldenRay LLM endpoint is unreachable from your machine. Check `GOLDENRAY_API_URL` and network connectivity.
+|===
 
 == Next
 

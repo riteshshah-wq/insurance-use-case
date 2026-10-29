@@ -2,12 +2,18 @@
 :description: Process insurance claims using AI-powered extraction, classification, and routing
 :page-pagination:
 
-== Objectives
+[sidebar]
+****
+*What you'll learn:* How to extract structured data from unstructured claim documents, classify claim severity with AI + business rules, and route claims to adjuster teams automatically.
 
-* Extract structured data from insurance claim documents
-* Classify claim severity using AI + business rules
-* Route claims to the appropriate adjuster team
-* Run the full claims pipeline end-to-end
+*Time estimate:* 20–25 minutes
+
+*Prerequisites:*
+
+* Insurance AI app running locally (Lab 1 complete)
+* `curl` and `jq` installed
+* Sample claim files in `data/sample_claims/`
+****
 
 == Overview
 
@@ -24,13 +30,9 @@ Send a sample claim document to the extraction endpoint:
 
 [source,bash]
 ----
-# Read a sample claim
-CLAIM_TEXT=$(cat data/sample_claims/claim1.txt)
-
-# Send to extraction endpoint
-curl -s -X POST http://localhost:8000/api/claims/extract \
+curl -s -X POST http://localhost:8001/api/claims/extract \
   -H "Content-Type: application/json" \
-  -d "{\"text\": $(echo "$CLAIM_TEXT" | jq -Rs .)}" | jq .
+  -d "{\"text\": $(cat data/sample_claims/claim1.txt | jq -Rs .)}" | jq .
 ----
 
 Expected output (fields extracted by LLM):
@@ -58,7 +60,7 @@ The classification endpoint extracts AND classifies in one call:
 
 [source,bash]
 ----
-curl -s -X POST http://localhost:8000/api/claims/classify \
+curl -s -X POST http://localhost:8001/api/claims/classify \
   -H "Content-Type: application/json" \
   -d "{\"text\": $(cat data/sample_claims/claim1.txt | jq -Rs .)}" | jq .
 ----
@@ -91,8 +93,7 @@ Process a claim end-to-end (extract → classify → route):
 
 [source,bash]
 ----
-# Process claim1 (auto, $15,500)
-curl -s -X POST http://localhost:8000/api/claims/process \
+curl -s -X POST http://localhost:8001/api/claims/process \
   -H "Content-Type: application/json" \
   -d "{\"text\": $(cat data/sample_claims/claim1.txt | jq -Rs .)}" | jq .
 ----
@@ -129,17 +130,17 @@ Process each sample claim and observe how routing changes:
 [source,bash]
 ----
 # Claim 2: Property, $59,200 (HIGH severity)
-curl -s -X POST http://localhost:8000/api/claims/process \
+curl -s -X POST http://localhost:8001/api/claims/process \
   -H "Content-Type: application/json" \
   -d "{\"text\": $(cat data/sample_claims/claim2.txt | jq -Rs .)}" | jq '.routing'
 
 # Claim 4: Auto, $2,400 (LOW severity)
-curl -s -X POST http://localhost:8000/api/claims/process \
+curl -s -X POST http://localhost:8001/api/claims/process \
   -H "Content-Type: application/json" \
   -d "{\"text\": $(cat data/sample_claims/claim4.txt | jq -Rs .)}" | jq '.routing'
 
 # Claim 5: Life, $500,000 (CRITICAL severity)
-curl -s -X POST http://localhost:8000/api/claims/process \
+curl -s -X POST http://localhost:8001/api/claims/process \
   -H "Content-Type: application/json" \
   -d "{\"text\": $(cat data/sample_claims/claim5.txt | jq -Rs .)}" | jq '.routing'
 ----
@@ -162,7 +163,7 @@ Write your own claim and process it:
 
 [source,bash]
 ----
-curl -s -X POST http://localhost:8000/api/claims/process \
+curl -s -X POST http://localhost:8001/api/claims/process \
   -H "Content-Type: application/json" \
   -d '{
     "text": "Claim #TEST-001. Policyholder Jane Doe (AUTO-112233) reports a fender bender on Oct 15, 2024 in a parking lot. Minor bumper damage estimated at $1,200. No injuries."
@@ -177,6 +178,25 @@ curl -s -X POST http://localhost:8000/api/claims/process \
 * [ ] Routing assigns correct adjuster team based on type + severity
 * [ ] Full pipeline processes claims end-to-end
 * [ ] Tried at least 3 different claim types
+
+== Troubleshooting
+
+[cols="2,3"]
+|===
+|Symptom |Fix
+
+|All extracted fields are `null`
+|TinyLlama may not parse the claim correctly. Check `raw_llm_response` in the output — it shows what the model actually returned. Try a simpler claim text.
+
+|`jq: error ... Invalid string` when using `cat` + `jq -Rs`
+|Ensure `jq` is installed. On macOS: `brew install jq`.
+
+|500 error on `/api/claims/process`
+|The LLM endpoint is unreachable. Check the app logs (`uvicorn` output) for connection errors to the GoldenRay API.
+
+|Classification always returns MEDIUM
+|When the LLM extraction fails to parse `claim_amount`, the rule-based fallback defaults to MEDIUM. This is expected with small models.
+|===
 
 == Next
 

@@ -44,7 +44,7 @@ uvicorn app.api:app --reload
 kubectl apply -f k8s/
 ----
 
-Then visit http://localhost:8000/docs for the interactive API documentation.
+Then visit http://localhost:8001/docs for the interactive API documentation.
 
 == Architecture
 
@@ -59,3 +59,4 @@ Follow the xref:workshop:lab1-setup.adoc[Workshop Labs] for a guided hands-on ex
 . xref:workshop:lab3-underwriting.adoc[Lab 3: Underwriting] — Risk assessment and premium calculation
 . xref:workshop:lab4-customer-agent.adoc[Lab 4: Customer Agent] — RAG-powered customer service
 . xref:workshop:lab5-monitoring.adoc[Lab 5: Monitoring] — Track models and pipelines with MLflow
+. xref:workshop:lab6-deployment.adoc[Lab 6: Deploying the App] — Containerize and deploy to Kubernetes

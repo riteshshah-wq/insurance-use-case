@@ -1,0 +1,232 @@
+= Lab 6: Deploying the Insurance App
+:description: Build, containerize, and deploy the Insurance AI application
+:page-pagination:
+
+[sidebar]
+****
+*What you'll learn:* How to containerize the Insurance AI app, deploy it to Kubernetes with GoldenRay model endpoints and guardrails, and verify the production deployment.
+
+*Time estimate:* 20–30 minutes
+
+*Prerequisites:*
+
+* Labs 1–5 completed
+* `podman` or `docker` installed
+* `kubectl` configured with cluster access
+* Container registry access (optional, for pushing images)
+****
+
+== Overview
+
+This lab walks through the full deployment lifecycle:
+
+[source]
+----
+Build Image → Push to Registry → Deploy K8s Manifests → Verify → Configure Models
+----
+
+== Step 1: Build the Container Image
+
+[source,bash]
+----
+cd insurance-use-case
+
+# Build with podman (or substitute `docker`)
+podman build -t insurance-use-case:latest .
+----
+
+Verify the image:
+[source,bash]
+----
+podman images | grep insurance-use-case
+----
+
+== Step 2: Test the Container Locally
+
+[source,bash]
+----
+podman run --rm -p 8001:8000 \
+  -e GOLDENRAY_API_URL=http://10.0.0.113:30888 \
+  -e GOLDENRAY_NAMESPACE=demo-tenant \
+  -e GOLDENRAY_ENDPOINT=TinyLlama \
+  insurance-use-case:latest
+----
+
+In another terminal, verify:
+[source,bash]
+----
+curl -s http://localhost:8001/health | jq .
+----
+
+== Step 3: Push to a Container Registry
+
+[source,bash]
+----
+# Tag for the registry
+podman tag insurance-use-case:latest registry.goldenray.ai/insurance-demo/insurance-api:latest
+
+# Push
+podman push registry.goldenray.ai/insurance-demo/insurance-api:latest
+----
+
+[NOTE]
+====
+If you don't have registry access, you can load the image directly on the cluster node:
+[source,bash]
+----
+podman save insurance-use-case:latest | ssh node01 'podman load'
+----
+====
+
+== Step 4: Deploy to Kubernetes
+
+Apply the manifests in order:
+
+[source,bash]
+----
+# Create the namespace
+kubectl apply -f k8s/namespace.yaml
+
+# Deploy the application
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+
+# Deploy the model endpoint
+kubectl apply -f k8s/modelendpoint.yaml
+
+# Deploy guardrails (PII protection)
+kubectl apply -f k8s/guardrails.yaml
+----
+
+Or use the Makefile shortcut:
+[source,bash]
+----
+make deploy
+----
+
+== Step 5: Verify the Deployment
+
+[source,bash]
+----
+# Check pods are running
+kubectl get pods -n insurance-demo
+
+# Check services
+kubectl get svc -n insurance-demo
+
+# Wait for pods to be ready
+kubectl wait --for=condition=ready pod -l app=insurance-api -n insurance-demo --timeout=120s
+----
+
+Expected:
+[source]
+----
+NAME                              READY   STATUS    RESTARTS   AGE
+insurance-api-7d8f9b6c4-x2k9p    1/1     Running   0          30s
+----
+
+== Step 6: Test the Deployed Application
+
+[source,bash]
+----
+# Get the NodePort or ClusterIP
+SVC_URL=$(kubectl get svc insurance-api -n insurance-demo -o jsonpath='{.spec.clusterIP}')
+
+# Health check
+kubectl run curl-test --rm -i --restart=Never --image=curlimages/curl -- \
+  curl -s http://${SVC_URL}:8000/health
+
+# Or use port-forward for local access
+kubectl port-forward svc/insurance-api -n insurance-demo 8001:8000 &
+
+# Then test locally
+curl -s http://localhost:8001/api/claims/process \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Claim #PROD-001. Policyholder John Doe reports water damage to kitchen from burst pipe on Nov 1, 2024. Estimated repair cost $8,500. Policy PROP-445566."
+  }' | jq .
+----
+
+== Step 7: Configure for Production Models
+
+Update the deployment to use a production-grade model:
+
+[source,bash]
+----
+kubectl set env deployment/insurance-api -n insurance-demo \
+  GOLDENRAY_NAMESPACE=production \
+  GOLDENRAY_ENDPOINT=llama-3-8b
+----
+
+Or for cloud models via External Models gateway:
+[source,bash]
+----
+kubectl set env deployment/insurance-api -n insurance-demo \
+  GOLDENRAY_NAMESPACE=external \
+  GOLDENRAY_ENDPOINT=gpt-4o
+----
+
+No code changes needed — the LLM client handles any model behind the GoldenRay API.
+
+== Step 8: Set Up Secrets
+
+Store the API key as a Kubernetes secret:
+
+[source,bash]
+----
+kubectl create secret generic goldenray-api-key \
+  -n insurance-demo \
+  --from-literal=api-key=YOUR_API_KEY
+----
+
+Reference it in the deployment by adding to `k8s/deployment.yaml`:
+[source,yaml]
+----
+env:
+  - name: GOLDENRAY_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: goldenray-api-key
+        key: api-key
+----
+
+== Checkpoint
+
+[%interactive]
+* [ ] Container image builds successfully
+* [ ] Container runs locally and serves `/health`
+* [ ] Kubernetes deployment is running with all pods ready
+* [ ] API endpoints respond through the Kubernetes service
+* [ ] Guardrails are deployed for PII protection
+* [ ] Can switch models via environment variables without code changes
+
+== Troubleshooting
+
+[cols="2,3"]
+|===
+|Symptom |Fix
+
+|`podman build` fails on `pip install`
+|Check that `requirements.txt` is in the repo root and has no typos. Try `podman build --no-cache`.
+
+|Pod stuck in `CrashLoopBackOff`
+|Check logs: `kubectl logs -n insurance-demo deployment/insurance-api`. Common cause: missing environment variables or unreachable GoldenRay API.
+
+|Pod stuck in `ImagePullBackOff`
+|Image not found in registry. Verify the image name in `k8s/deployment.yaml` matches what you pushed.
+
+|Service returns 502/503
+|Pod may not be ready yet. Wait for readiness probe: `kubectl wait --for=condition=ready pod -l app=insurance-api -n insurance-demo --timeout=120s`.
+
+|Model endpoint returns 404
+|Check that the `ModelEndpoint` CR is applied and the model name matches: `kubectl get modelendpoints -n insurance-demo`.
+|===
+
+== Next Steps
+
+Congratulations! You have a fully deployed Insurance AI application. Consider:
+
+* Setting up CI/CD to automate builds and deployments
+* Configuring Horizontal Pod Autoscaler for production traffic
+* Adding Prometheus metrics and Grafana dashboards
+* Integrating with your organization's SSO via Keycloak

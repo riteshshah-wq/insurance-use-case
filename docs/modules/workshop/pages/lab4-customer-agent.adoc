@@ -2,11 +2,18 @@
 :description: RAG-powered customer service chatbot for insurance queries
 :page-pagination:
 
-== Objectives
+[sidebar]
+****
+*What you'll learn:* How Retrieval Augmented Generation (RAG) works — retrieving relevant policy documents and using them to ground LLM answers to customer questions.
 
-* Query the customer agent about insurance policies
-* Understand how RAG retrieves relevant policy documents
-* Test conversational context across multiple messages
+*Time estimate:* 15–20 minutes
+
+*Prerequisites:*
+
+* Insurance AI app running locally (Lab 1 complete)
+* `curl` and `jq` installed
+* Policy documents loaded (happens automatically at app startup)
+****
 
 == Overview
 
@@ -23,7 +30,7 @@ Policy documents are loaded at startup from `data/sample_policies/`. The agent s
 
 [source,bash]
 ----
-curl -s -X POST http://localhost:8000/api/agent/chat \
+curl -s -X POST http://localhost:8001/api/agent/chat \
   -H "Content-Type: application/json" \
   -d '{
     "message": "What is my deductible for auto insurance?"
@@ -48,7 +55,7 @@ With TinyLlama, responses may be basic or partially relevant. The key is that th
 
 [source,bash]
 ----
-curl -s -X POST http://localhost:8000/api/agent/chat \
+curl -s -X POST http://localhost:8001/api/agent/chat \
   -H "Content-Type: application/json" \
   -d '{
     "message": "How do I file a homeowners insurance claim?"
@@ -66,7 +73,7 @@ Expected: The response references the claims process from `home_policy.txt`:
 
 [source,bash]
 ----
-curl -s -X POST http://localhost:8000/api/agent/chat \
+curl -s -X POST http://localhost:8001/api/agent/chat \
   -H "Content-Type: application/json" \
   -d '{
     "message": "Can I convert my term life policy to permanent life insurance?"
@@ -81,7 +88,7 @@ Send a follow-up question with conversation history:
 
 [source,bash]
 ----
-curl -s -X POST http://localhost:8000/api/agent/chat \
+curl -s -X POST http://localhost:8001/api/agent/chat \
   -H "Content-Type: application/json" \
   -d '{
     "message": "What is the time limit for that conversion?",
@@ -98,7 +105,7 @@ Expected: The agent uses conversation context plus retrieved documents to answer
 
 [source,bash]
 ----
-curl -s -X POST http://localhost:8000/api/agent/chat \
+curl -s -X POST http://localhost:8001/api/agent/chat \
   -H "Content-Type: application/json" \
   -d '{
     "message": "What is the weather forecast for tomorrow?"
@@ -111,7 +118,7 @@ Expected: The agent should indicate it cannot help with non-insurance questions 
 
 [source,bash]
 ----
-curl -s -X POST http://localhost:8000/api/agent/chat \
+curl -s -X POST http://localhost:8001/api/agent/chat \
   -H "Content-Type: application/json" \
   -d '{
     "message": "Is flood damage covered by my homeowners insurance?"
@@ -151,6 +158,25 @@ For production, replace the keyword-based retrieval with:
 * [ ] Sources array correctly identifies which documents were used
 * [ ] Multi-turn conversation maintains context
 * [ ] Out-of-scope questions handled gracefully
+
+== Troubleshooting
+
+[cols="2,3"]
+|===
+|Symptom |Fix
+
+|`sources` array is empty
+|The keyword retriever found no matching terms. Try a question with words that appear in the policy docs (e.g., "deductible", "coverage", "claim").
+
+|Response says "I apologize, but I'm having trouble..."
+|The LLM endpoint is unreachable. Check `uvicorn` logs for connection errors. The fallback message is by design — the app never crashes on LLM failure.
+
+|Response doesn't match the policy documents
+|TinyLlama may ignore or hallucinate over the provided context. Check the `sources` field — if the right document was retrieved, the RAG pipeline is working correctly. Better models produce better answers from the same context.
+
+|`conversation_history` seems ignored
+|Only the last 6 messages from history are included to stay within TinyLlama's context window. Keep conversations short.
+|===
 
 == Next
 

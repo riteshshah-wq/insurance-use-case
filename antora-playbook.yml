@@ -1,0 +1,12 @@
+site:
+  title: GoldenRay Insurance AI Workshop
+  start_page: insurance-use-case::index.adoc
+content:
+  sources:
+    - url: .
+      branches: main
+      start_path: docs
+ui:
+  bundle:
+    url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/HEAD/raw/build/ui-bundle.zip?job=bundle-stable
+    snapshot: true

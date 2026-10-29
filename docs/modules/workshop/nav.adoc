@@ -4,3 +4,4 @@
 * xref:lab3-underwriting.adoc[Lab 3: Underwriting]
 * xref:lab4-customer-agent.adoc[Lab 4: Customer Agent]
 * xref:lab5-monitoring.adoc[Lab 5: Monitoring]
+* xref:lab6-deployment.adoc[Lab 6: Deploying the App]
