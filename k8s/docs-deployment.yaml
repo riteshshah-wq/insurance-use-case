@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: antora-docs
+  namespace: insurance-docs
+  labels:
+    app: antora-docs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: antora-docs
+  template:
+    metadata:
+      labels:
+        app: antora-docs
+    spec:
+      initContainers:
+        - name: extract-docs
+          image: busybox:1.36
+          command: ["sh", "-c", "tar xzf /docs-tar/site.tar.gz -C /usr/share/nginx/html/"]
+          volumeMounts:
+            - name: docs-tar
+              mountPath: /docs-tar
+            - name: html
+              mountPath: /usr/share/nginx/html
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+      volumes:
+        - name: docs-tar
+          configMap:
+            name: docs-site-tar
+        - name: html
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: antora-docs
+  namespace: insurance-docs
+  labels:
+    app: antora-docs
+spec:
+  type: NodePort
+  selector:
+    app: antora-docs
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30882
+      protocol: TCP
