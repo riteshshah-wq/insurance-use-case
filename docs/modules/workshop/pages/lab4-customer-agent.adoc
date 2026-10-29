@@ -1,0 +1,157 @@
+= Lab 4: Customer Agent
+:description: RAG-powered customer service chatbot for insurance queries
+:page-pagination:
+
+== Objectives
+
+* Query the customer agent about insurance policies
+* Understand how RAG retrieves relevant policy documents
+* Test conversational context across multiple messages
+
+== Overview
+
+The customer agent uses Retrieval Augmented Generation (RAG):
+
+[source]
+----
+Customer Question → Retrieve Policy Docs → Augment Prompt → LLM Answer → Response
+----
+
+Policy documents are loaded at startup from `data/sample_policies/`. The agent searches them using keyword matching (demo) or vector similarity (production with GoldenRay RAG endpoint).
+
+== Step 1: Simple Policy Question
+
+[source,bash]
+----
+curl -s -X POST http://localhost:8000/api/agent/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "What is my deductible for auto insurance?"
+  }' | jq .
+----
+
+Expected output:
+[source,json]
+----
+{
+  "response": "Based on the auto policy document, your deductible for collision coverage is $500, and for comprehensive coverage it is $250...",
+  "sources": ["auto_policy.txt"]
+}
+----
+
+[NOTE]
+====
+With TinyLlama, responses may be basic or partially relevant. The key is that the RAG system correctly retrieves `auto_policy.txt` and includes it in the context. Larger models will produce much better answers from the same retrieved context.
+====
+
+== Step 2: Home Insurance Question
+
+[source,bash]
+----
+curl -s -X POST http://localhost:8000/api/agent/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "How do I file a homeowners insurance claim?"
+  }' | jq .
+----
+
+Expected: The response references the claims process from `home_policy.txt`:
+1. Call 1-800-ACME-HME within 24 hours
+2. Protect property from further damage
+3. Document damage with photos
+4. Create inventory of damaged items
+5. Keep receipts for emergency repairs
+
+== Step 3: Life Insurance Question
+
+[source,bash]
+----
+curl -s -X POST http://localhost:8000/api/agent/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Can I convert my term life policy to permanent life insurance?"
+  }' | jq .
+----
+
+Expected: The response references the conversion privilege from `life_policy.txt`.
+
+== Step 4: Multi-Turn Conversation
+
+Send a follow-up question with conversation history:
+
+[source,bash]
+----
+curl -s -X POST http://localhost:8000/api/agent/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "What is the time limit for that conversion?",
+    "conversation_history": [
+      {"role": "user", "content": "Can I convert my term life policy to permanent?"},
+      {"role": "assistant", "content": "Yes, you can convert your term life policy to a permanent whole life policy without evidence of insurability."}
+    ]
+  }' | jq .
+----
+
+Expected: The agent uses conversation context plus retrieved documents to answer that conversion is available during the first 15 years of the term or before age 65.
+
+== Step 5: Out-of-Scope Question
+
+[source,bash]
+----
+curl -s -X POST http://localhost:8000/api/agent/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "What is the weather forecast for tomorrow?"
+  }' | jq .
+----
+
+Expected: The agent should indicate it cannot help with non-insurance questions and redirect to insurance-related topics.
+
+== Step 6: Test Exclusions Knowledge
+
+[source,bash]
+----
+curl -s -X POST http://localhost:8000/api/agent/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Is flood damage covered by my homeowners insurance?"
+  }' | jq .
+----
+
+Expected: The agent retrieves the exclusions section from `home_policy.txt` and explains that flood damage is excluded and requires a separate flood policy.
+
+== How RAG Works in This Demo
+
+[source]
+----
+1. Customer asks: "What is my auto deductible?"
+2. RAG retriever splits query into keywords: [auto, deductible]
+3. Searches all policy document chunks for matching terms
+4. Finds relevant chunks in auto_policy.txt (Section 4: Collision, Section 5: Comprehensive)
+5. Injects chunks into LLM prompt as context
+6. LLM generates answer grounded in the actual policy text
+----
+
+=== Production RAG Improvements
+
+For production, replace the keyword-based retrieval with:
+
+* **GoldenRay RAG endpoint**: Vector similarity search using embeddings
+* **Embedding model**: Generate embeddings for document chunks
+* **Vector DB**: Store and search embeddings efficiently (Milvus, ChromaDB)
+* **Reranking**: Use a cross-encoder to rerank retrieved chunks
+* **Chunk optimization**: Tune chunk size, overlap, and splitting strategy
+
+== Checkpoint
+
+[%interactive]
+* [ ] Agent answers auto insurance questions using auto_policy.txt
+* [ ] Agent answers home insurance questions using home_policy.txt
+* [ ] Agent answers life insurance questions using life_policy.txt
+* [ ] Sources array correctly identifies which documents were used
+* [ ] Multi-turn conversation maintains context
+* [ ] Out-of-scope questions handled gracefully
+
+== Next
+
+Continue to xref:lab5-monitoring.adoc[Lab 5: Monitoring] to track model performance with MLflow.

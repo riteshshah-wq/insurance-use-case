@@ -1,0 +1,6 @@
+.Workshop Labs
+* xref:lab1-setup.adoc[Lab 1: Platform Setup]
+* xref:lab2-claims.adoc[Lab 2: Claims Processing]
+* xref:lab3-underwriting.adoc[Lab 3: Underwriting]
+* xref:lab4-customer-agent.adoc[Lab 4: Customer Agent]
+* xref:lab5-monitoring.adoc[Lab 5: Monitoring]

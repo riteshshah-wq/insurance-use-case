@@ -1,0 +1,183 @@
+= Model Configuration
+:description: Configure different models for the Insurance AI application
+
+== Overview
+
+The Insurance AI application works with any model served through the GoldenRay MaaS API. The LLM client is model-agnostic — switch models by changing environment variables, not code.
+
+== Available Models
+
+=== Currently Deployed
+
+[cols="2,1,1,2,2"]
+|===
+|Model |Runtime |Namespace |Parameters |Notes
+
+|TinyLlama/TinyLlama-1.1B-Chat-v1.0
+|Ollama
+|demo-tenant
+|1.1B
+|CPU-friendly, good for demos. Basic extraction quality.
+
+|facebook/opt-125m
+|vLLM
+|testuser
+|125M
+|Very small, fast. Too small for reliable extraction.
+|===
+
+=== Recommended for Production
+
+[cols="2,1,1,3"]
+|===
+|Model |Runtime |Parameters |Expected Quality
+
+|meta-llama/Llama-3-8B-Instruct
+|vLLM
+|8B
+|Good extraction (85%+), reliable JSON output, reasonable latency
+
+|meta-llama/Llama-3-70B-Instruct
+|vLLM
+|70B
+|Excellent extraction (95%+), requires GPU with 40GB+ VRAM
+
+|mistralai/Mixtral-8x7B-Instruct
+|vLLM
+|46.7B (MoE)
+|Strong extraction, good JSON adherence, efficient via MoE
+|===
+
+=== Cloud Models via External Models Gateway
+
+[cols="2,1,3"]
+|===
+|Model |Provider |Configuration
+
+|GPT-4o
+|OpenAI
+|`GOLDENRAY_NAMESPACE=external` `GOLDENRAY_ENDPOINT=gpt-4o`
+
+|Claude 3.5 Sonnet
+|Anthropic
+|`GOLDENRAY_NAMESPACE=external` `GOLDENRAY_ENDPOINT=claude-3.5-sonnet`
+
+|Gemini Pro
+|Google
+|`GOLDENRAY_NAMESPACE=external` `GOLDENRAY_ENDPOINT=gemini-pro`
+|===
+
+== Switching Models
+
+=== Environment Variables
+
+[source,bash]
+----
+# Use TinyLlama (default, demo)
+export GOLDENRAY_NAMESPACE=demo-tenant
+export GOLDENRAY_ENDPOINT=TinyLlama
+
+# Use OPT-125M
+export GOLDENRAY_NAMESPACE=testuser
+export GOLDENRAY_ENDPOINT=facebook/opt-125m
+
+# Use Llama-3-8B (when deployed)
+export GOLDENRAY_NAMESPACE=production
+export GOLDENRAY_ENDPOINT=llama-3-8b
+
+# Use GPT-4o via External Models
+export GOLDENRAY_NAMESPACE=external
+export GOLDENRAY_ENDPOINT=gpt-4o
+----
+
+=== API Override
+
+You can also override per-request in the LLM client:
+
+[source,python]
+----
+from app.common.llm_client import chat
+
+response = await chat(
+    messages=[{"role": "user", "content": "Hello"}],
+    model_endpoint="llama-3-8b",
+    namespace="production",
+)
+----
+
+== Model Quality vs. Cost Tradeoffs
+
+[source]
+----
+Quality ▲
+        │
+  GPT-4o│ ●
+        │
+ Llama3 │    ●
+   70B  │
+        │
+ Llama3 │       ●
+   8B   │
+        │
+TinyLlam│          ●
+        │
+OPT-125M│             ●
+        │
+        └──────────────────► Cost / Latency
+----
+
+== Tuning Parameters
+
+Adjust these based on the model and use case:
+
+[cols="1,1,3"]
+|===
+|Parameter |Default |Guidance
+
+|`max_tokens`
+|200
+|Increase to 500+ for complex extraction. Small models may need more tokens to produce complete JSON.
+
+|`temperature`
+|0.3
+|Keep low (0.1-0.3) for extraction/classification. Higher (0.7-0.9) for customer agent conversational responses.
+
+|`top_p`
+|0.9
+|Leave at default for most use cases.
+|===
+
+== Deploying a New Model
+
+To deploy a new model on GoldenRay:
+
+1. Create a `ModelEndpoint` CR (see `k8s/modelendpoint.yaml`)
+2. Update the model name and runtime
+3. Apply to the cluster
+4. Update the application's `GOLDENRAY_ENDPOINT`
+
+[source,yaml]
+----
+apiVersion: goldenray.ai/v1alpha1
+kind: ModelEndpoint
+metadata:
+  name: insurance-llm-production
+  namespace: insurance-demo
+spec:
+  model: meta-llama/Llama-3-8B-Instruct
+  runtime: vllm
+  resources:
+    limits:
+      nvidia.com/gpu: "1"
+      memory: 24Gi
+  replicas: 1
+----
+
+== Fine-Tuning
+
+The training pipeline (`pipelines/training_pipeline.py`) supports fine-tuning on insurance domain data. After fine-tuning:
+
+1. Register the model in MLflow Model Registry
+2. Deploy as a new ModelEndpoint
+3. Update the application configuration
+4. Compare metrics vs. the base model

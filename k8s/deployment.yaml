@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: insurance-api
+  namespace: insurance-demo
+  labels:
+    app: insurance-api
+    app.kubernetes.io/part-of: insurance-use-case
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: insurance-api
+  template:
+    metadata:
+      labels:
+        app: insurance-api
+    spec:
+      containers:
+        - name: insurance-api
+          image: registry.goldenray.ai/insurance-demo/insurance-api:latest
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          env:
+            - name: GOLDENRAY_API_URL
+              value: "http://10.0.0.113:30888"
+            - name: GOLDENRAY_NAMESPACE
+              value: "demo-tenant"
+            - name: GOLDENRAY_ENDPOINT
+              value: "TinyLlama"
+            - name: GOLDENRAY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: goldenray-api-key
+                  key: api-key
+                  optional: true
+            - name: MLFLOW_TRACKING_URI
+              value: "http://10.0.0.113:30500"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10

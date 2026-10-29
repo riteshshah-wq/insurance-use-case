@@ -1,0 +1,156 @@
+= Lab 1: Platform Setup
+:description: Set up the GoldenRay AI Platform and deploy the Insurance AI application
+:page-pagination:
+
+== Objectives
+
+* Access the GoldenRay AI Platform
+* Verify model endpoints are available
+* Deploy the Insurance AI application
+* Test connectivity
+
+== Prerequisites
+
+* Access to the GoldenRay cluster (IP: `10.0.0.113`)
+* `kubectl` configured with cluster access
+* Python 3.12+ installed locally
+* `curl` or HTTPie for API testing
+
+== Step 1: Verify Platform Access
+
+Check that the GoldenRay MaaS API is reachable:
+
+[source,bash]
+----
+# Test MaaS API
+curl -s http://10.0.0.113:30888/health | jq .
+----
+
+Expected output:
+[source,json]
+----
+{
+  "status": "healthy"
+}
+----
+
+Check MLflow:
+[source,bash]
+----
+curl -s http://10.0.0.113:30500/api/2.0/mlflow/experiments/list | jq .experiments[].name
+----
+
+== Step 2: Verify Model Endpoints
+
+Test that the model endpoints respond:
+
+[source,bash]
+----
+# Test TinyLlama (Ollama)
+curl -s -X POST http://10.0.0.113:30888/api/v1/inference/demo-tenant/TinyLlama \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [{"role": "user", "content": "Hello, what is insurance?"}],
+    "max_tokens": 50
+  }' | jq .
+----
+
+Expected: A JSON response with a `choices` array containing the model's answer.
+
+[NOTE]
+====
+TinyLlama is a 1.1B parameter model. Responses will be basic but demonstrate the API flow. For production quality, use a larger model like Llama-3-8B or GPT-4o via External Models.
+====
+
+[source,bash]
+----
+# Test OPT-125M (vLLM)
+curl -s -X POST http://10.0.0.113:30888/api/v1/inference/testuser/facebook/opt-125m \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [{"role": "user", "content": "Hello"}],
+    "max_tokens": 30
+  }' | jq .
+----
+
+== Step 3: Clone and Run Locally
+
+[source,bash]
+----
+# Clone the repository
+git clone https://github.com/riteshshah-wq/insurance-use-case.git
+cd insurance-use-case
+
+# Create virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set environment variables (optional — defaults point to GoldenRay)
+export GOLDENRAY_API_URL=http://10.0.0.113:30888
+export GOLDENRAY_NAMESPACE=demo-tenant
+export GOLDENRAY_ENDPOINT=TinyLlama
+
+# Start the application
+uvicorn app.api:app --reload --port 8000
+----
+
+Expected: Server starts on `http://localhost:8000`.
+
+== Step 4: Verify the Application
+
+[source,bash]
+----
+# Health check
+curl -s http://localhost:8000/health | jq .
+----
+
+Expected output:
+[source,json]
+----
+{
+  "status": "healthy",
+  "version": "1.0.0",
+  "model_endpoint": "TinyLlama",
+  "namespace": "demo-tenant"
+}
+----
+
+Visit http://localhost:8000/docs to see the interactive Swagger UI.
+
+== Step 5: Deploy to Kubernetes (Optional)
+
+[source,bash]
+----
+# Create namespace
+kubectl apply -f k8s/namespace.yaml
+
+# Deploy the application
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+
+# Deploy model endpoint and guardrails
+kubectl apply -f k8s/modelendpoint.yaml
+kubectl apply -f k8s/guardrails.yaml
+
+# Verify
+kubectl get pods -n insurance-demo
+kubectl get svc -n insurance-demo
+----
+
+== Checkpoint
+
+At the end of this lab, you should have:
+
+[%interactive]
+* [ ] GoldenRay MaaS API responding
+* [ ] At least one model endpoint (TinyLlama) working
+* [ ] Insurance AI app running locally or on Kubernetes
+* [ ] Health endpoint returning expected response
+* [ ] Swagger UI accessible at `/docs`
+
+== Next
+
+Continue to xref:lab2-claims.adoc[Lab 2: Claims Processing] to process your first insurance claim with AI.

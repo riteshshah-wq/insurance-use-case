@@ -1,0 +1,47 @@
+# GoldenRay ModelEndpoint for insurance-dedicated model
+# This CRD tells GoldenRay to provision a model serving endpoint
+# specifically for the insurance use case.
+#
+# To use a different model, change spec.model and spec.runtime:
+# - TinyLlama via Ollama (small, CPU-friendly, demo)
+# - facebook/opt-125m via vLLM (small, GPU-optimized)
+# - meta-llama/Llama-3-8B via vLLM (production quality, requires GPU)
+# - External: GPT-4o or Claude via External Models gateway
+
+apiVersion: goldenray.ai/v1alpha1
+kind: ModelEndpoint
+metadata:
+  name: insurance-llm
+  namespace: insurance-demo
+  labels:
+    app.kubernetes.io/part-of: insurance-use-case
+    goldenray.ai/use-case: insurance
+spec:
+  # Model to serve
+  model: TinyLlama/TinyLlama-1.1B-Chat-v1.0
+  runtime: ollama  # Options: ollama, vllm, external
+
+  # Resource allocation
+  resources:
+    requests:
+      cpu: "2"
+      memory: 4Gi
+    limits:
+      cpu: "4"
+      memory: 8Gi
+      # nvidia.com/gpu: "1"  # Uncomment for GPU models
+
+  # Scaling
+  replicas: 1
+  minReplicas: 1
+  maxReplicas: 3
+
+  # Inference configuration
+  inferenceConfig:
+    maxTokens: 512
+    temperature: 0.3
+    topP: 0.9
+
+  # Access control
+  tenants:
+    - demo-tenant

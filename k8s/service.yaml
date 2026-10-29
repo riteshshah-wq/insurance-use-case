@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: insurance-api
+  namespace: insurance-demo
+  labels:
+    app: insurance-api
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8000
+      protocol: TCP
+      name: http
+  selector:
+    app: insurance-api

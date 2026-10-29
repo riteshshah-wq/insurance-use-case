@@ -1,0 +1,183 @@
+= Lab 2: Claims Processing
+:description: Process insurance claims using AI-powered extraction, classification, and routing
+:page-pagination:
+
+== Objectives
+
+* Extract structured data from insurance claim documents
+* Classify claim severity using AI + business rules
+* Route claims to the appropriate adjuster team
+* Run the full claims pipeline end-to-end
+
+== Overview
+
+The claims processing pipeline has three stages:
+
+[source]
+----
+Claim Document → Extract (LLM) → Classify (LLM + Rules) → Route (Rules) → Result
+----
+
+== Step 1: Extract Claim Fields
+
+Send a sample claim document to the extraction endpoint:
+
+[source,bash]
+----
+# Read a sample claim
+CLAIM_TEXT=$(cat data/sample_claims/claim1.txt)
+
+# Send to extraction endpoint
+curl -s -X POST http://localhost:8000/api/claims/extract \
+  -H "Content-Type: application/json" \
+  -d "{\"text\": $(echo "$CLAIM_TEXT" | jq -Rs .)}" | jq .
+----
+
+Expected output (fields extracted by LLM):
+[source,json]
+----
+{
+  "claim_id": "CLM-2024-00142",
+  "claimant_name": "John Smith",
+  "incident_date": "2024-03-10",
+  "claim_amount": 15500.0,
+  "claim_type": "auto",
+  "description": "Highway collision, whiplash injury, vehicle damage",
+  "raw_llm_response": "..."
+}
+----
+
+[NOTE]
+====
+With TinyLlama, extraction quality will vary. Some fields may be null or imprecise. The application handles this gracefully — classification and routing use rule-based fallbacks when LLM output is incomplete.
+====
+
+== Step 2: Classify Severity
+
+The classification endpoint extracts AND classifies in one call:
+
+[source,bash]
+----
+curl -s -X POST http://localhost:8000/api/claims/classify \
+  -H "Content-Type: application/json" \
+  -d "{\"text\": $(cat data/sample_claims/claim1.txt | jq -Rs .)}" | jq .
+----
+
+Expected output:
+[source,json]
+----
+{
+  "severity": "medium",
+  "confidence": 0.85,
+  "reasoning": "Auto claim of $15,500 falls in the medium range ($5,000-$25,000)"
+}
+----
+
+Classification rules:
+
+[cols="1,2,2"]
+|===
+|Severity |Amount Range |Notes
+
+|LOW |< $5,000 |Routine claims
+|MEDIUM |$5,000 — $25,000 |Standard processing
+|HIGH |$25,000 — $100,000 |Senior adjuster required
+|CRITICAL |> $100,000 |Or involves injury/death/total loss
+|===
+
+== Step 3: Full Pipeline
+
+Process a claim end-to-end (extract → classify → route):
+
+[source,bash]
+----
+# Process claim1 (auto, $15,500)
+curl -s -X POST http://localhost:8000/api/claims/process \
+  -H "Content-Type: application/json" \
+  -d "{\"text\": $(cat data/sample_claims/claim1.txt | jq -Rs .)}" | jq .
+----
+
+Expected output:
+[source,json]
+----
+{
+  "extraction": {
+    "claim_id": "CLM-2024-00142",
+    "claimant_name": "John Smith",
+    "claim_amount": 15500.0,
+    "claim_type": "auto",
+    ...
+  },
+  "classification": {
+    "severity": "medium",
+    "confidence": 0.85,
+    "reasoning": "..."
+  },
+  "routing": {
+    "adjuster_team": "Auto Standard Team",
+    "priority": 2,
+    "estimated_processing_days": 7,
+    "notes": "Severity: medium (confidence: 85%) | Amount: $15,500.00 | Type: auto"
+  }
+}
+----
+
+== Step 4: Try Different Claims
+
+Process each sample claim and observe how routing changes:
+
+[source,bash]
+----
+# Claim 2: Property, $59,200 (HIGH severity)
+curl -s -X POST http://localhost:8000/api/claims/process \
+  -H "Content-Type: application/json" \
+  -d "{\"text\": $(cat data/sample_claims/claim2.txt | jq -Rs .)}" | jq '.routing'
+
+# Claim 4: Auto, $2,400 (LOW severity)
+curl -s -X POST http://localhost:8000/api/claims/process \
+  -H "Content-Type: application/json" \
+  -d "{\"text\": $(cat data/sample_claims/claim4.txt | jq -Rs .)}" | jq '.routing'
+
+# Claim 5: Life, $500,000 (CRITICAL severity)
+curl -s -X POST http://localhost:8000/api/claims/process \
+  -H "Content-Type: application/json" \
+  -d "{\"text\": $(cat data/sample_claims/claim5.txt | jq -Rs .)}" | jq '.routing'
+----
+
+Expected routing for each:
+
+[cols="1,1,1,1"]
+|===
+|Claim |Severity |Team |Priority
+
+|claim1 (auto, $15.5k) |MEDIUM |Auto Standard Team |2
+|claim2 (property, $59.2k) |HIGH |Property Senior Team |3
+|claim4 (auto, $2.4k) |LOW |Auto Express Team |1
+|claim5 (life, $500k) |CRITICAL |Life Special Investigations |5
+|===
+
+== Step 5: Experiment with Custom Claims
+
+Write your own claim and process it:
+
+[source,bash]
+----
+curl -s -X POST http://localhost:8000/api/claims/process \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Claim #TEST-001. Policyholder Jane Doe (AUTO-112233) reports a fender bender on Oct 15, 2024 in a parking lot. Minor bumper damage estimated at $1,200. No injuries."
+  }' | jq .
+----
+
+== Checkpoint
+
+[%interactive]
+* [ ] Successfully extracted fields from a claim document
+* [ ] Severity classification matches expected rules
+* [ ] Routing assigns correct adjuster team based on type + severity
+* [ ] Full pipeline processes claims end-to-end
+* [ ] Tried at least 3 different claim types
+
+== Next
+
+Continue to xref:lab3-underwriting.adoc[Lab 3: Underwriting] to assess insurance applicant risk.

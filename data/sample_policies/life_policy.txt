@@ -1,0 +1,62 @@
+ACME INSURANCE — TERM LIFE POLICY DOCUMENT
+Policy Type: Level Term Life Insurance
+Policy Form: ACM-LIFE-2024
+
+COVERAGE OVERVIEW
+
+This policy provides a death benefit to your designated beneficiaries if you pass away during the policy term. Premiums remain level (unchanged) for the entire term.
+
+Available Terms: 10, 20, or 30 years
+Coverage Amounts: $100,000 to $5,000,000
+
+DEATH BENEFIT
+The full face amount of the policy is paid to beneficiaries upon the insured's death during the policy term, regardless of cause (subject to exclusions and contestability provisions).
+
+BENEFICIARY DESIGNATION
+- Primary Beneficiary: Receives the death benefit first
+- Contingent Beneficiary: Receives benefit if primary beneficiary predeceases insured
+- Multiple beneficiaries may be named with percentage allocations
+- Beneficiary changes can be made at any time by written request
+
+PREMIUM INFORMATION
+- Premiums are guaranteed level for the full policy term
+- Payment frequency: Annual, semi-annual, quarterly, or monthly
+- Grace period: 31 days from premium due date
+- Policy lapses if premium is not paid within grace period
+
+CONTESTABILITY PERIOD
+The policy is contestable for the first 2 years from the issue date. During this period, the company may investigate and deny claims based on material misrepresentation on the application.
+
+After the contestability period, the policy is incontestable except for:
+- Fraud
+- Non-payment of premiums
+
+SUICIDE EXCLUSION
+If the insured dies by suicide within the first 2 years of policy issuance, the benefit is limited to a return of premiums paid.
+
+CONVERSION PRIVILEGE
+You may convert this term policy to a permanent (whole life) policy without evidence of insurability:
+- Available during the first 15 years of the term (or before age 65)
+- Premiums for the new policy based on attained age at conversion
+- No medical exam required
+
+CLAIMS PROCESS
+1. Notify Acme Insurance at 1-800-ACME-LIFE as soon as possible
+2. Required documents:
+   - Certified death certificate
+   - Completed claim form (provided by Acme)
+   - Original policy document (if available)
+   - Beneficiary identification
+3. Claims are typically processed within 30-60 days
+4. Payment options: Lump sum, installments, or retained asset account
+
+EXCLUSIONS
+- Death during commission of a felony
+- Death due to an act of war
+- Suicide within first 2 years (limited to return of premium)
+
+RIDERS (Available at additional cost):
+- Accidental Death Benefit: Doubles the death benefit for accidental death
+- Waiver of Premium: Waives premiums if insured becomes totally disabled
+- Child Term Rider: Provides term coverage for dependent children
+- Accelerated Death Benefit: Access up to 50% of benefit if diagnosed with terminal illness

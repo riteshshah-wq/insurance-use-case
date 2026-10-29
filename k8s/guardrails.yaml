@@ -1,0 +1,62 @@
+# GoldenRay Guardrails for Insurance PII Protection
+# Intercepts inference requests and responses to detect/redact sensitive data.
+
+apiVersion: goldenray.ai/v1alpha1
+kind: GuardrailPolicy
+metadata:
+  name: insurance-pii-protection
+  namespace: insurance-demo
+  labels:
+    app.kubernetes.io/part-of: insurance-use-case
+spec:
+  # Apply to all model endpoints in this namespace
+  targetEndpoints:
+    - insurance-llm
+
+  rules:
+    # SSN Detection and Redaction
+    - name: ssn-redaction
+      type: pii-detection
+      action: redact
+      pattern: '\b\d{3}-\d{2}-\d{4}\b'
+      description: "Redact Social Security Numbers"
+      replacement: "[SSN REDACTED]"
+      appliesTo: [input, output]
+
+    # Policy Number Protection (log but don't redact)
+    - name: policy-number-audit
+      type: pii-detection
+      action: log
+      pattern: '\b(AUTO|HOME|LIFE|HLTH)-\d{6}\b'
+      description: "Log policy number access for audit"
+      appliesTo: [input, output]
+
+    # Medical Information (ICD codes)
+    - name: medical-code-redaction
+      type: pii-detection
+      action: redact
+      pattern: '\b[A-Z]\d{2}\.\d{1,2}\b'
+      description: "Redact ICD-10 medical diagnosis codes in outputs"
+      replacement: "[MEDICAL CODE REDACTED]"
+      appliesTo: [output]
+
+    # Credit Card Numbers
+    - name: credit-card-redaction
+      type: pii-detection
+      action: block
+      pattern: '\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b'
+      description: "Block credit card numbers from being sent to models"
+      appliesTo: [input]
+
+    # Phone Numbers (log)
+    - name: phone-number-audit
+      type: pii-detection
+      action: log
+      pattern: '\b\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b'
+      description: "Audit phone number usage"
+      appliesTo: [input, output]
+
+  # Global settings
+  enforcement: enabled
+  logLevel: info
+  auditLog: true

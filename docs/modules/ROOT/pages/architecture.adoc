@@ -1,0 +1,113 @@
+= Architecture
+:description: System architecture for the Insurance AI Use Case
+
+== System Architecture
+
+The Insurance AI application integrates with the GoldenRay AI Platform for model serving, guardrails, and observability.
+
+[source]
+----
+┌─────────────────────────────────────────────────────────────────┐
+│                     Insurance AI Application                     │
+│                                                                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌────────────────────┐     │
+│  │   Claims      │  │ Underwriting │  │  Customer Agent    │     │
+│  │  Processing   │  │              │  │  (RAG + Chat)      │     │
+│  │              │  │              │  │                    │     │
+│  │ Extract      │  │ Risk Score   │  │ Retrieve Docs     │     │
+│  │ Classify     │  │ Premium Calc │  │ Generate Answer   │     │
+│  │ Route        │  │ Narrative    │  │                    │     │
+│  └──────┬───────┘  └──────┬───────┘  └────────┬───────────┘     │
+│         │                 │                    │                  │
+│         └─────────────────┼────────────────────┘                 │
+│                           │                                      │
+│                    ┌──────▼───────┐                               │
+│                    │  LLM Client  │                               │
+│                    │  (httpx)     │                               │
+│                    └──────┬───────┘                               │
+│                           │                                      │
+└───────────────────────────┼──────────────────────────────────────┘
+                            │
+                    ┌───────▼────────┐
+                    │  GoldenRay     │
+                    │  MaaS API      │
+                    │  /api/v1/      │
+                    │  inference/    │
+                    └───────┬────────┘
+                            │
+              ┌─────────────┼─────────────┐
+              │             │             │
+     ┌────────▼──┐  ┌──────▼────┐  ┌─────▼──────┐
+     │ Ollama    │  │   vLLM    │  │  External  │
+     │ TinyLlama │  │ opt-125m  │  │  Models    │
+     │           │  │           │  │  GPT-4o    │
+     │           │  │           │  │  Claude    │
+     └───────────┘  └───────────┘  └────────────┘
+----
+
+== Components
+
+=== FastAPI Application (`app/`)
+The main application exposes REST endpoints for all three use cases. It's stateless and horizontally scalable.
+
+=== LLM Client (`app/common/llm_client.py`)
+A configurable client that calls models through the GoldenRay MaaS API. The same code works with any model — change the endpoint name to switch between:
+
+* Self-hosted small models (TinyLlama, OPT-125M) for development
+* Self-hosted GPU models (Llama-3, Mixtral) for production
+* Cloud models (GPT-4o, Claude) via External Models gateway
+
+=== Guardrails (`k8s/guardrails.yaml`)
+PII protection intercepts all inference requests/responses:
+
+* SSN redaction
+* Policy number audit logging
+* Medical code (ICD-10) redaction in outputs
+* Credit card number blocking
+
+=== Flyte Pipelines (`pipelines/`)
+Two orchestrated workflows:
+
+* **Claims Pipeline**: extract → classify → route → log to MLflow
+* **Training Pipeline**: load data → fine-tune → evaluate → register model
+
+=== MLflow Tracking
+All inference results and model training experiments are logged to MLflow at `http://10.0.0.113:30500`.
+
+== Data Flow
+
+[source]
+----
+Claim Document
+    │
+    ▼
+Extract (LLM) ──► Structured Fields (JSON)
+    │
+    ▼
+Classify (LLM + Rules) ──► Severity Level
+    │
+    ▼
+Route (Rules) ──► Adjuster Assignment
+    │
+    ▼
+MLflow ──► Experiment Tracking
+----
+
+== Deployment Options
+
+[cols="1,2,2"]
+|===
+|Environment |How |Notes
+
+|Local dev
+|`uvicorn app.api:app --reload`
+|Calls GoldenRay API remotely
+
+|Kubernetes
+|`kubectl apply -f k8s/`
+|Deployed in `insurance-demo` namespace
+
+|Docker
+|`docker build -t insurance-api . && docker run -p 8000:8000 insurance-api`
+|Standalone container
+|===

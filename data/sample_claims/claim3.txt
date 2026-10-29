@@ -1,0 +1,32 @@
+HEALTH INSURANCE CLAIM
+Claim Reference: CLM-2024-00391
+Submission Date: April 18, 2024
+
+Patient/Claimant: Robert Chen
+Member ID: HLTH-772901
+Group: CORP-TECHSTART-2024
+
+Date of Service: April 5-12, 2024
+Provider: Massachusetts General Hospital, Boston, MA
+
+Diagnosis: Acute appendicitis with perforation (ICD-10: K35.2)
+
+Treatment Summary:
+The patient presented to the emergency department on April 5, 2024, with acute abdominal pain. Diagnostic imaging (CT scan) confirmed acute appendicitis with signs of perforation. Emergency laparoscopic appendectomy was performed on April 5. Due to complications from the perforation (peritoneal abscess), the patient required extended hospitalization with IV antibiotics and drainage procedure on April 8.
+
+Itemized Charges:
+- Emergency department visit: $3,200
+- CT scan (abdomen/pelvis): $2,800
+- Surgical procedure (laparoscopic appendectomy): $18,500
+- Anesthesia services: $4,200
+- Hospital room (7 nights): $14,000
+- IV medications and antibiotics: $3,800
+- Drainage procedure: $6,500
+- Laboratory tests: $1,900
+- Follow-up outpatient visit: $350
+
+Total Claim Amount: $55,250
+
+Pre-authorization: Emergency admission — no prior auth required per policy terms.
+Network Status: In-network provider
+Deductible Status: $500 annual deductible previously met

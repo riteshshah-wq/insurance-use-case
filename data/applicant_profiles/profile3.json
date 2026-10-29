@@ -1,0 +1,13 @@
+{
+  "id": "applicant-003",
+  "name": "Alex Thompson",
+  "age": 22,
+  "gender": "male",
+  "health_conditions": [],
+  "driving_record": "major_violations",
+  "property_value": null,
+  "coverage_type": "auto",
+  "coverage_amount": 100000,
+  "location": "Miami, FL",
+  "occupation": "Delivery Driver"
+}

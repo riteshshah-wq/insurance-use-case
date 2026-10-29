@@ -1,0 +1,58 @@
+ACME INSURANCE — AUTO POLICY DOCUMENT
+Policy Type: Personal Automobile Insurance
+Policy Form: ACM-AUTO-2024
+
+SECTION 1: LIABILITY COVERAGE
+
+Coverage A — Bodily Injury Liability
+We will pay damages for bodily injury for which any insured becomes legally responsible because of an auto accident. We will settle or defend any claim or suit for bodily injury.
+
+Limits:
+- Per Person: $100,000
+- Per Accident: $300,000
+
+Coverage B — Property Damage Liability
+We will pay damages for property damage for which any insured becomes legally responsible because of an auto accident.
+
+Limit: $100,000 per accident
+
+SECTION 2: MEDICAL PAYMENTS
+We will pay reasonable medical expenses incurred within 3 years from the date of an accident for necessary medical services.
+
+Limit: $10,000 per person
+
+SECTION 3: UNINSURED/UNDERINSURED MOTORIST
+Covers bodily injury sustained by an insured caused by an uninsured or underinsured motor vehicle.
+
+Limits: Same as liability limits
+
+SECTION 4: COLLISION COVERAGE
+We will pay for direct and accidental loss to your covered auto caused by collision, minus the deductible.
+
+Deductible: $500
+
+SECTION 5: COMPREHENSIVE COVERAGE
+We will pay for direct and accidental loss to your covered auto not caused by collision, including theft, vandalism, weather events, animal strikes, and glass damage.
+
+Deductible: $250
+
+CLAIMS PROCESS:
+1. Report the incident within 48 hours by calling 1-800-ACME-CLM
+2. File a police report for any accident involving injury or significant damage
+3. Document damage with photographs
+4. Obtain repair estimates from approved body shops
+5. Submit all documentation through the online portal or by mail
+
+DEDUCTIBLE INFORMATION:
+The deductible is the amount you pay before insurance coverage applies. Deductibles are per-incident, not per-year.
+
+RENTAL CAR COVERAGE:
+If your vehicle is undrivable due to a covered loss, rental car reimbursement is provided up to $50/day for a maximum of 30 days.
+
+EXCLUSIONS:
+- Intentional damage
+- Wear and tear
+- Mechanical breakdown
+- Racing or speed contests
+- Using vehicle for commercial purposes (unless endorsed)
+- Driving under the influence of drugs or alcohol

@@ -1,0 +1,209 @@
+= Lab 3: Underwriting
+:description: AI-assisted risk assessment and premium calculation
+:page-pagination:
+
+== Objectives
+
+* Assess applicant risk using rule-based scoring + LLM narrative
+* Calculate insurance premiums based on risk profiles
+* Compare risk assessments across different applicant profiles
+
+== Overview
+
+The underwriting module combines deterministic business rules with AI-generated risk narratives:
+
+[source]
+----
+Applicant Profile → Risk Scoring (Rules) → LLM Narrative → Premium Calculation → Result
+----
+
+== Step 1: Assess Risk — Low-Risk Applicant
+
+[source,bash]
+----
+curl -s -X POST http://localhost:8000/api/underwriting/assess \
+  -H "Content-Type: application/json" \
+  -d '{
+    "applicant": {
+      "name": "Emily Rodriguez",
+      "age": 32,
+      "health_conditions": [],
+      "driving_record": "clean",
+      "coverage_type": "auto",
+      "coverage_amount": 50000,
+      "location": "Denver, CO",
+      "occupation": "Software Engineer"
+    }
+  }' | jq .
+----
+
+Expected output:
+[source,json]
+----
+{
+  "risk_score": 25.0,
+  "risk_category": "low",
+  "risk_factors": [],
+  "narrative": "Rule-based assessment: low risk (score: 25.0/100)."
+}
+----
+
+== Step 2: Assess Risk — High-Risk Applicant
+
+[source,bash]
+----
+curl -s -X POST http://localhost:8000/api/underwriting/assess \
+  -H "Content-Type: application/json" \
+  -d '{
+    "applicant": {
+      "name": "Alex Thompson",
+      "age": 22,
+      "health_conditions": [],
+      "driving_record": "major_violations",
+      "coverage_type": "auto",
+      "coverage_amount": 100000,
+      "location": "Miami, FL",
+      "occupation": "Delivery Driver"
+    }
+  }' | jq .
+----
+
+Expected output:
+[source,json]
+----
+{
+  "risk_score": 60.0,
+  "risk_category": "high",
+  "risk_factors": [
+    "Young driver/applicant (age 22)",
+    "Major driving violations"
+  ],
+  "narrative": "..."
+}
+----
+
+== Step 3: Calculate Premium
+
+[source,bash]
+----
+# Low-risk applicant premium
+curl -s -X POST http://localhost:8000/api/underwriting/premium \
+  -H "Content-Type: application/json" \
+  -d '{
+    "applicant": {
+      "name": "Emily Rodriguez",
+      "age": 32,
+      "coverage_type": "auto",
+      "coverage_amount": 50000,
+      "driving_record": "clean"
+    }
+  }' | jq .
+----
+
+Expected output:
+[source,json]
+----
+{
+  "base_premium": 400.0,
+  "risk_adjusted_premium": 556.0,
+  "monthly_premium": 46.33,
+  "annual_premium": 556.0,
+  "risk_score": 25.0,
+  "adjustments": {
+    "base_rate": 0.008,
+    "risk_multiplier": 1.15,
+    "age_factor": 1.0,
+    "tier_factor": 1.0
+  }
+}
+----
+
+[source,bash]
+----
+# High-risk applicant premium
+curl -s -X POST http://localhost:8000/api/underwriting/premium \
+  -H "Content-Type: application/json" \
+  -d '{
+    "applicant": {
+      "name": "Alex Thompson",
+      "age": 22,
+      "coverage_type": "auto",
+      "coverage_amount": 100000,
+      "driving_record": "major_violations"
+    }
+  }' | jq .
+----
+
+Notice how the high-risk applicant pays significantly more due to:
+
+* Higher risk multiplier (from risk score 60 vs 25)
+* Young driver age factor (1.3x)
+
+== Step 4: Compare Health Insurance Profiles
+
+[source,bash]
+----
+# Applicant with health conditions
+curl -s -X POST http://localhost:8000/api/underwriting/premium \
+  -H "Content-Type: application/json" \
+  -d '{
+    "applicant": {
+      "name": "David Kim",
+      "age": 58,
+      "health_conditions": ["diabetes", "hypertension"],
+      "coverage_type": "health",
+      "coverage_amount": 250000,
+      "location": "Seattle, WA",
+      "occupation": "Construction Manager"
+    }
+  }' | jq .
+----
+
+== Step 5: Risk Factor Analysis
+
+Use the sample profiles from the `data/applicant_profiles/` directory:
+
+[source,bash]
+----
+# Process each profile
+for i in 1 2 3; do
+  PROFILE=$(cat data/applicant_profiles/profile${i}.json)
+  NAME=$(echo $PROFILE | jq -r .name)
+  echo "=== $NAME ==="
+  curl -s -X POST http://localhost:8000/api/underwriting/assess \
+    -H "Content-Type: application/json" \
+    -d "{\"applicant\": $PROFILE}" | jq '{risk_score, risk_category, risk_factors}'
+  echo
+done
+----
+
+== Risk Scoring Rules
+
+[cols="2,1,3"]
+|===
+|Factor |Points |Description
+
+|Age < 25 |+15 |Young applicant risk
+|Age > 65 |+10 |Senior applicant risk
+|High-risk health condition |+12 each |Diabetes, heart disease, cancer, COPD, stroke
+|Other health condition |+5 each |Any reported condition
+|DUI on record |+30 |Driving under influence
+|Major violations |+20 |Serious driving offenses
+|Minor violations |+8 |Speeding tickets, etc.
+|High coverage (>$500k) |+10 |Large policy exposure
+|Very high coverage (>$1M) |+15 |Very large policy exposure
+|Base score |25 |Starting point for all applicants
+|===
+
+== Checkpoint
+
+[%interactive]
+* [ ] Low-risk applicant scores ≤25 with "low" category
+* [ ] High-risk applicant scores >50 with identifiable risk factors
+* [ ] Premium increases proportionally with risk score
+* [ ] Age and driving record factors affect auto insurance premiums
+* [ ] Health conditions affect health insurance premiums
+
+== Next
+
+Continue to xref:lab4-customer-agent.adoc[Lab 4: Customer Agent] for RAG-powered customer service.

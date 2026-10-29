@@ -1,0 +1,186 @@
+= Lab 5: Monitoring & Observability
+:description: Track model performance and pipeline execution with MLflow
+:page-pagination:
+
+== Objectives
+
+* View MLflow experiments and runs
+* Track claims processing metrics
+* Monitor model quality over time
+* Review Flyte pipeline execution
+
+== Overview
+
+GoldenRay integrates with MLflow for experiment tracking and model registry. Every claims processing run and model training job logs metrics, parameters, and artifacts to MLflow.
+
+== Step 1: Access MLflow UI
+
+Open the MLflow UI in your browser:
+
+[source]
+----
+http://10.0.0.113:30500
+----
+
+You should see the MLflow Tracking UI with experiment lists. If the `insurance-claims-processing` experiment doesn't exist yet, it will be created on the first API call.
+
+== Step 2: Generate Tracking Data
+
+Process several claims to generate MLflow tracking data:
+
+[source,bash]
+----
+# Process all sample claims
+for i in 1 2 3 4 5; do
+  echo "Processing claim${i}..."
+  curl -s -X POST http://localhost:8000/api/claims/process \
+    -H "Content-Type: application/json" \
+    -d "{\"text\": $(cat data/sample_claims/claim${i}.txt | jq -Rs .)}" | jq '{severity: .classification.severity, team: .routing.adjuster_team}'
+  echo
+done
+----
+
+[NOTE]
+====
+MLflow logging is attempted in the Flyte pipeline (`pipelines/claims_pipeline.py`). If MLflow is not reachable from the application, the pipeline continues with a fallback ID. The data is still processed correctly — MLflow tracking is observability, not a blocking dependency.
+====
+
+== Step 3: Review Metrics in MLflow
+
+In the MLflow UI, navigate to the `insurance-claims-processing` experiment:
+
+* **Parameters**: claim_type, severity, adjuster_team
+* **Metrics**: claim_amount, confidence, priority
+* **Artifacts**: extraction.json, classification.json, routing.json
+
+=== Key Metrics to Track
+
+[cols="1,2,2"]
+|===
+|Metric |What It Measures |Target
+
+|`claim_amount` |Dollar amount of the claim |Business distribution tracking
+|`confidence` |Classification confidence score |> 0.8 for production
+|`priority` |Routing priority (1-5) |Distribution across teams
+|`extraction_accuracy` |% of fields correctly extracted |> 0.9 for production
+|`json_parse_rate` |% of LLM outputs that parse as valid JSON |> 0.95 for production
+|`avg_latency_ms` |Model inference latency |< 2000ms for interactive use
+|===
+
+== Step 4: Model Training Pipeline Metrics
+
+If you've run the training pipeline, check the `insurance-model-training` experiment:
+
+[source,bash]
+----
+# List MLflow experiments
+curl -s http://10.0.0.113:30500/api/2.0/mlflow/experiments/list | jq '.experiments[] | {name, experiment_id}'
+----
+
+Training metrics include:
+
+* `final_loss`: Training loss at end of fine-tuning
+* `extraction_accuracy`: Accuracy on held-out claim extraction
+* `classification_accuracy`: Severity classification accuracy
+* `json_parse_rate`: How often the model produces valid JSON
+
+== Step 5: Comparing Model Performance
+
+Use the MLflow comparison view to compare runs across different models:
+
+1. In MLflow UI, select the experiment
+2. Check multiple runs
+3. Click "Compare"
+4. View metric charts to identify the best-performing model
+
+=== Expected Comparisons
+
+[cols="1,1,1,1"]
+|===
+|Model |Extraction Accuracy |Latency |JSON Parse Rate
+
+|TinyLlama 1.1B |~50-70% |~500ms |~60-80%
+|OPT-125M |~20-40% |~200ms |~30-50%
+|Llama-3-8B (future) |~85-95% |~1-2s |~95%+
+|GPT-4o (future) |~95%+ |~1-3s |~99%+
+|===
+
+== Step 6: Setting Up Alerts (Production)
+
+For production monitoring, configure alerts on key metrics:
+
+[source,yaml]
+----
+# Example: Prometheus alerting rules for insurance API
+groups:
+  - name: insurance-ai
+    rules:
+      - alert: LowExtractionAccuracy
+        expr: avg(extraction_accuracy) < 0.8
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Claims extraction accuracy below 80%"
+
+      - alert: HighLatency
+        expr: avg(inference_latency_seconds) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Model inference latency above 3 seconds"
+
+      - alert: ModelEndpointDown
+        expr: up{job="insurance-llm"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Insurance LLM endpoint is down"
+----
+
+== Step 7: Review Guardrails Logs
+
+Check the guardrails audit log for PII detection events:
+
+[source,bash]
+----
+# Check guardrail logs (if deployed on Kubernetes)
+kubectl logs -n insurance-demo -l app=guardrails --tail=50
+----
+
+Expected log entries:
+[source]
+----
+INFO: PII detected - policy_number_audit - Pattern match in input
+INFO: PII redacted - ssn-redaction - 1 occurrence(s) redacted in output
+----
+
+== Checkpoint
+
+[%interactive]
+* [ ] MLflow UI accessible and showing experiments
+* [ ] Claims processing generates tracking data
+* [ ] Can view parameters, metrics, and artifacts per run
+* [ ] Understand which metrics indicate model quality
+* [ ] Know how to compare runs across models
+* [ ] Aware of guardrails PII audit logging
+
+== Summary
+
+In this workshop, you've built and operated a complete AI-powered insurance application:
+
+1. **Lab 1**: Set up the GoldenRay platform and deployed the app
+2. **Lab 2**: Processed claims with AI extraction, classification, and routing
+3. **Lab 3**: Assessed applicant risk and calculated premiums
+4. **Lab 4**: Built a RAG-powered customer service agent
+5. **Lab 5**: Monitored model performance with MLflow
+
+=== Next Steps
+
+* Try deploying a larger model (Llama-3-8B) for better extraction quality
+* Configure External Models to compare with GPT-4o
+* Set up the Flyte training pipeline for model fine-tuning
+* Add more policy documents to improve RAG coverage
+* Implement production alerting and dashboards

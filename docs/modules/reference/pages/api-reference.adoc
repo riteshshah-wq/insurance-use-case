@@ -1,0 +1,223 @@
+= API Reference
+:description: REST API documentation for the Insurance AI application
+
+== Base URL
+
+[source]
+----
+http://localhost:8000    # Local development
+http://insurance-api.insurance-demo.svc.cluster.local  # Kubernetes
+----
+
+== Health Check
+
+=== GET /health
+
+Returns application health status and configuration.
+
+[source,bash]
+----
+curl http://localhost:8000/health
+----
+
+Response:
+[source,json]
+----
+{
+  "status": "healthy",
+  "version": "1.0.0",
+  "model_endpoint": "TinyLlama",
+  "namespace": "demo-tenant"
+}
+----
+
+== Claims Processing
+
+=== POST /api/claims/extract
+
+Extract structured fields from claim document text.
+
+Request:
+[source,json]
+----
+{
+  "text": "CLAIM REPORT\nReference: CLM-2024-00142\n..."
+}
+----
+
+Response:
+[source,json]
+----
+{
+  "claim_id": "CLM-2024-00142",
+  "claimant_name": "John Smith",
+  "incident_date": "2024-03-10",
+  "claim_amount": 15500.0,
+  "claim_type": "auto",
+  "description": "Highway collision with vehicle damage and whiplash",
+  "raw_llm_response": "..."
+}
+----
+
+=== POST /api/claims/classify
+
+Extract and classify a claim's severity.
+
+Request: Same as `/extract`
+
+Response:
+[source,json]
+----
+{
+  "severity": "medium",
+  "confidence": 0.85,
+  "reasoning": "Auto claim of $15,500 in medium range"
+}
+----
+
+=== POST /api/claims/process
+
+Full pipeline: extract → classify → route.
+
+Request: Same as `/extract`
+
+Response:
+[source,json]
+----
+{
+  "extraction": { ... },
+  "classification": { ... },
+  "routing": {
+    "adjuster_team": "Auto Standard Team",
+    "priority": 2,
+    "estimated_processing_days": 7,
+    "notes": "..."
+  }
+}
+----
+
+== Underwriting
+
+=== POST /api/underwriting/assess
+
+Risk assessment for an insurance applicant.
+
+Request:
+[source,json]
+----
+{
+  "applicant": {
+    "name": "Emily Rodriguez",
+    "age": 32,
+    "health_conditions": [],
+    "driving_record": "clean",
+    "coverage_type": "auto",
+    "coverage_amount": 50000,
+    "location": "Denver, CO",
+    "occupation": "Software Engineer"
+  }
+}
+----
+
+Response:
+[source,json]
+----
+{
+  "risk_score": 25.0,
+  "risk_category": "low",
+  "risk_factors": [],
+  "narrative": "..."
+}
+----
+
+=== POST /api/underwriting/premium
+
+Calculate premium for an applicant (includes risk assessment).
+
+Request: Same as `/assess`
+
+Response:
+[source,json]
+----
+{
+  "base_premium": 400.0,
+  "risk_adjusted_premium": 556.0,
+  "monthly_premium": 46.33,
+  "annual_premium": 556.0,
+  "risk_score": 25.0,
+  "adjustments": {
+    "base_rate": 0.008,
+    "risk_multiplier": 1.15,
+    "age_factor": 1.0,
+    "tier_factor": 1.0
+  }
+}
+----
+
+== Customer Agent
+
+=== POST /api/agent/chat
+
+Customer service chat with RAG-powered responses.
+
+Request:
+[source,json]
+----
+{
+  "message": "What is my auto insurance deductible?",
+  "conversation_history": []
+}
+----
+
+Response:
+[source,json]
+----
+{
+  "response": "Based on your auto policy, your collision deductible is $500...",
+  "sources": ["auto_policy.txt"]
+}
+----
+
+=== Conversation History
+
+To maintain context across multiple messages, include previous messages:
+
+[source,json]
+----
+{
+  "message": "What about comprehensive?",
+  "conversation_history": [
+    {"role": "user", "content": "What is my auto deductible?"},
+    {"role": "assistant", "content": "Your collision deductible is $500."}
+  ]
+}
+----
+
+== Error Handling
+
+All endpoints return standard HTTP error codes:
+
+[cols="1,2"]
+|===
+|Code |Description
+
+|200 |Success
+|422 |Validation error (invalid request body)
+|500 |Internal server error (LLM call failed, etc.)
+|===
+
+Error response format:
+[source,json]
+----
+{
+  "detail": "Error description"
+}
+----
+
+== Interactive Documentation
+
+FastAPI provides auto-generated Swagger UI at:
+
+* **Swagger UI**: `http://localhost:8000/docs`
+* **ReDoc**: `http://localhost:8000/redoc`
+* **OpenAPI JSON**: `http://localhost:8000/openapi.json`

@@ -1,0 +1,8 @@
+name: insurance-use-case
+title: Insurance AI Use Case
+version: '1.0'
+start_page: ROOT:index.adoc
+nav:
+  - modules/ROOT/nav.adoc
+  - modules/workshop/nav.adoc
+  - modules/reference/nav.adoc

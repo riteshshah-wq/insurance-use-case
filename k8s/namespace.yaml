@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: insurance-demo
+  labels:
+    app.kubernetes.io/part-of: insurance-use-case
+    goldenray.ai/tenant: demo-tenant

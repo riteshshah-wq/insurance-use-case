@@ -1,0 +1,36 @@
+LIFE INSURANCE CLAIM NOTIFICATION
+Claim Reference: CLM-2024-00512
+Date of Notification: May 1, 2024
+
+Deceased: William R. Thompson
+Policy Number: LIFE-998877
+Policy Type: Term Life Insurance (20-year term)
+Face Value: $500,000
+
+Date of Death: April 25, 2024
+Place of Death: Memorial Hospital, Chicago, IL
+Cause of Death: Acute myocardial infarction (heart attack)
+Manner of Death: Natural
+
+Beneficiary Information:
+Primary Beneficiary: Elizabeth A. Thompson (spouse) — 70%
+Secondary Beneficiary: James W. Thompson (son) — 30%
+
+Claimant: Elizabeth A. Thompson
+Relationship: Spouse
+
+Policy Status at Time of Death:
+- Policy in force, all premiums current
+- Policy inception: January 15, 2015
+- Contestability period: Expired (policy > 2 years old)
+- No outstanding policy loans
+
+Required Documentation Submitted:
+- Certified death certificate
+- Completed claim form (signed by beneficiary)
+- Policy document (original)
+- Beneficiary identification (driver's license, SSN verification)
+
+Total Claim Amount: $500,000
+
+Requested Payout Method: Lump sum payment to beneficiaries per policy allocation.

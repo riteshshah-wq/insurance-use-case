@@ -1,0 +1,127 @@
+= Deployment Guide
+:description: Deploy the Insurance AI application to Kubernetes
+
+== Prerequisites
+
+* Kubernetes cluster with GoldenRay AI Platform installed
+* `kubectl` configured with cluster access
+* Container registry access (for pushing Docker images)
+
+== Quick Deploy
+
+[source,bash]
+----
+# 1. Build and push the Docker image
+docker build -t registry.goldenray.ai/insurance-demo/insurance-api:latest .
+docker push registry.goldenray.ai/insurance-demo/insurance-api:latest
+
+# 2. Apply Kubernetes manifests
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s/modelendpoint.yaml
+kubectl apply -f k8s/guardrails.yaml
+
+# 3. Verify
+kubectl get pods -n insurance-demo
+kubectl get svc -n insurance-demo
+----
+
+== Configuration
+
+All configuration is via environment variables. Set them in `k8s/deployment.yaml` or via a ConfigMap:
+
+[cols="2,2,3"]
+|===
+|Variable |Default |Description
+
+|`GOLDENRAY_API_URL` |`http://10.0.0.113:30888` |GoldenRay MaaS API URL
+|`GOLDENRAY_NAMESPACE` |`demo-tenant` |Model namespace/tenant
+|`GOLDENRAY_ENDPOINT` |`TinyLlama` |Model endpoint name
+|`GOLDENRAY_API_KEY` |_(none)_ |API key for authentication
+|`MLFLOW_TRACKING_URI` |`http://10.0.0.113:30500` |MLflow tracking server URL
+|===
+
+== Switching Models
+
+To switch from TinyLlama to a production model, update the deployment:
+
+[source,yaml]
+----
+env:
+  - name: GOLDENRAY_NAMESPACE
+    value: "production-tenant"
+  - name: GOLDENRAY_ENDPOINT
+    value: "llama-3-8b"  # or "gpt-4o" via External Models
+----
+
+No code changes required. The LLM client uses the same GoldenRay API for all models.
+
+== Scaling
+
+The application is stateless and can be horizontally scaled:
+
+[source,bash]
+----
+kubectl scale deployment insurance-api -n insurance-demo --replicas=5
+----
+
+Or configure Horizontal Pod Autoscaler:
+
+[source,yaml]
+----
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: insurance-api-hpa
+  namespace: insurance-demo
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: insurance-api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+----
+
+== Health Checks
+
+The deployment includes liveness and readiness probes on `/health`:
+
+* **Liveness**: Restarts pod if unhealthy (30s interval)
+* **Readiness**: Removes from service if not ready (10s interval)
+
+== Secrets Management
+
+Store the GoldenRay API key as a Kubernetes secret:
+
+[source,bash]
+----
+kubectl create secret generic goldenray-api-key \
+  -n insurance-demo \
+  --from-literal=api-key=YOUR_API_KEY
+----
+
+== Local Development
+
+[source,bash]
+----
+# Using venv
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.api:app --reload --port 8000
+
+# Using Docker
+docker build -t insurance-api .
+docker run -p 8000:8000 \
+  -e GOLDENRAY_API_URL=http://10.0.0.113:30888 \
+  insurance-api
+----

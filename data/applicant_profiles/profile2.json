@@ -1,0 +1,13 @@
+{
+  "id": "applicant-002",
+  "name": "David Kim",
+  "age": 58,
+  "gender": "male",
+  "health_conditions": ["diabetes", "hypertension"],
+  "driving_record": "minor_violations",
+  "property_value": 450000,
+  "coverage_type": "health",
+  "coverage_amount": 250000,
+  "location": "Seattle, WA",
+  "occupation": "Construction Manager"
+}

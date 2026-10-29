@@ -1,0 +1,77 @@
+ACME INSURANCE — HOMEOWNERS POLICY DOCUMENT
+Policy Type: Homeowners Insurance (HO-3 Special Form)
+Policy Form: ACM-HOME-2024
+
+SECTION 1: PROPERTY COVERAGES
+
+Coverage A — Dwelling
+Covers damage to the structure of your home from covered perils.
+Limit: Based on replacement cost of dwelling
+Deductible: $1,000
+
+Coverage B — Other Structures
+Covers detached structures (garages, fences, sheds).
+Limit: 10% of Coverage A limit
+
+Coverage C — Personal Property
+Covers your belongings inside the home.
+Limit: 50% of Coverage A limit
+Special sub-limits:
+- Jewelry: $2,500 (unless scheduled)
+- Electronics: $5,000
+- Firearms: $3,000
+- Cash/securities: $200
+
+Coverage D — Loss of Use
+Covers additional living expenses if your home is uninhabitable due to a covered loss.
+Limit: 20% of Coverage A limit
+Maximum duration: 12 months
+
+SECTION 2: LIABILITY COVERAGES
+
+Coverage E — Personal Liability
+Covers legal liability for bodily injury or property damage to others.
+Limit: $300,000 per occurrence
+
+Coverage F — Medical Payments to Others
+Covers medical expenses for persons injured on your property.
+Limit: $5,000 per person
+
+COVERED PERILS (HO-3):
+Your dwelling is covered against all perils except those specifically excluded. Personal property is covered against named perils:
+- Fire and lightning
+- Windstorm and hail
+- Explosion
+- Riot or civil commotion
+- Aircraft and vehicles
+- Smoke
+- Vandalism
+- Theft
+- Falling objects
+- Weight of ice, snow, sleet
+- Water damage from plumbing
+- Electrical surge
+
+EXCLUSIONS:
+- Flood (requires separate flood policy)
+- Earthquake (available as endorsement)
+- Neglect and intentional loss
+- War
+- Nuclear hazard
+- Government action
+- Mold (limited coverage)
+- Pest/vermin damage
+- Foundation settling
+
+CLAIMS PROCESS:
+1. Call 1-800-ACME-HME within 24 hours of discovering loss
+2. Protect property from further damage (board up, tarp, etc.)
+3. Document all damage with photos and video
+4. Create inventory of damaged/lost items with estimated values
+5. Keep receipts for emergency repairs and temporary housing
+6. Do not dispose of damaged items until adjuster inspection
+7. An adjuster will contact you within 48 hours of filing
+
+REPLACEMENT COST vs. ACTUAL CASH VALUE:
+- Dwelling: Covered at replacement cost (no depreciation)
+- Personal property: Actual cash value unless Replacement Cost endorsement is added

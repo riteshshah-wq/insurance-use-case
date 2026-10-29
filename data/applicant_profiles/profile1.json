@@ -1,0 +1,13 @@
+{
+  "id": "applicant-001",
+  "name": "Emily Rodriguez",
+  "age": 32,
+  "gender": "female",
+  "health_conditions": [],
+  "driving_record": "clean",
+  "property_value": null,
+  "coverage_type": "auto",
+  "coverage_amount": 50000,
+  "location": "Denver, CO",
+  "occupation": "Software Engineer"
+}
